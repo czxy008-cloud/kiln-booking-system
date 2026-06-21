@@ -143,7 +143,7 @@
             <p>学员：{{ qrArtwork.student_name }}</p>
             <p class="qr-code-text">编号：{{ qrArtwork.qr_code }}</p>
           </div>
-          <img :src="`/api/artworks/${qrArtwork.id}/qrcode`" alt="二维码" class="qr-image" />
+          <img :src="qrImageUrl" alt="二维码" class="qr-image" />
           <p class="qr-hint">学员扫码即可查看作品烧制进程</p>
           <button
             class="btn btn-outline"
@@ -198,6 +198,12 @@ const filteredArtworks = computed(() => {
     if (stageFilter.value && a.current_stage !== stageFilter.value) return false
     return true
   })
+})
+
+const qrImageUrl = computed(() => {
+  if (!qrArtwork.value) return ''
+  const base = encodeURIComponent(window.location.origin)
+  return `/api/artworks/${qrArtwork.value.id}/qrcode?base_url=${base}`
 })
 
 function formatDate(iso) {

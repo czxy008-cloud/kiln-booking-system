@@ -1,6 +1,8 @@
-from fastapi import FastAPI
+import os
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from app.config import settings
 from app.database import engine, Base
 from app.api import api_router
@@ -24,6 +26,23 @@ app.add_middleware(
 app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 
 app.include_router(api_router)
+
+
+FRONTEND_DIST = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "..", "frontend", "dist")
+FRONTEND_INDEX = os.path.abspath(os.path.join(FRONTEND_DIST, "index.html"))
+
+if os.path.exists(FRONTEND_INDEX):
+    app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIST, "assets")), name="frontend-assets")
+
+    @app.get("/{full_path:path}")
+    async def spa_catch_all(request: Request, full_path: str):
+        if full_path.startswith("api/") or full_path.startswith("uploads/"):
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail="Not Found")
+        if os.path.exists(FRONTEND_INDEX):
+            return FileResponse(FRONTEND_INDEX)
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Frontend not built")
 
 
 @app.get("/api/health")

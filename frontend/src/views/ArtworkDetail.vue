@@ -29,7 +29,7 @@
           </div>
         </div>
         <div class="qr-section">
-          <img :src="`/api/artworks/${artwork.id}/qrcode`" alt="二维码" class="qr-img" />
+          <img :src="qrImageUrl" alt="二维码" class="qr-img" />
           <p class="qr-text">扫码查看进度</p>
         </div>
       </div>
@@ -225,6 +225,12 @@ const progressPercent = computed(() => {
   const currentIdx = stageOptions.findIndex(s => s.key === artwork.value.current_stage)
   if (currentIdx < 0) return 0
   return Math.round((currentIdx / (stageOptions.length - 1)) * 100)
+})
+
+const qrImageUrl = computed(() => {
+  if (!artwork.value) return ''
+  const base = encodeURIComponent(window.location.origin)
+  return `/api/artworks/${artwork.value.id}/qrcode?base_url=${base}`
 })
 
 function formatDate(iso) {
