@@ -1,9 +1,10 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from app import schemas
+from app import schemas, models
 from app.database import get_db
 from app.services import FiringCurveService
+from app.utils.auth import require_auth
 
 router = APIRouter(prefix="/api/firing-curves", tags=["烧制曲线"])
 
@@ -36,12 +37,21 @@ def recommend_curve(clay_type: str, db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=schemas.FiringCurve, status_code=201)
-def create_curve(data: schemas.FiringCurveCreate, db: Session = Depends(get_db)):
+def create_curve(
+    data: schemas.FiringCurveCreate,
+    db: Session = Depends(get_db),
+    _: models.User = Depends(require_auth)
+):
     return FiringCurveService.create(db, data)
 
 
 @router.put("/{curve_id}", response_model=schemas.FiringCurve)
-def update_curve(curve_id: int, data: schemas.FiringCurveUpdate, db: Session = Depends(get_db)):
+def update_curve(
+    curve_id: int,
+    data: schemas.FiringCurveUpdate,
+    db: Session = Depends(get_db),
+    _: models.User = Depends(require_auth)
+):
     curve = FiringCurveService.update(db, curve_id, data)
     if not curve:
         raise HTTPException(status_code=404, detail="曲线不存在")
@@ -49,7 +59,11 @@ def update_curve(curve_id: int, data: schemas.FiringCurveUpdate, db: Session = D
 
 
 @router.delete("/{curve_id}")
-def delete_curve(curve_id: int, db: Session = Depends(get_db)):
+def delete_curve(
+    curve_id: int,
+    db: Session = Depends(get_db),
+    _: models.User = Depends(require_auth)
+):
     if not FiringCurveService.delete(db, curve_id):
         raise HTTPException(status_code=404, detail="曲线不存在")
     return {"message": "删除成功"}

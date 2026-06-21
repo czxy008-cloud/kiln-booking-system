@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
     UPLOAD_DIR: str = "uploads"
     CORS_ORIGINS: list = ["http://localhost:5173", "http://localhost:3000"]
+    FRONTEND_BASE_URL: str = "http://localhost:5173"
 
     class Config:
         env_file = ".env"

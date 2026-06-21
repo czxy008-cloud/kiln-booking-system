@@ -76,13 +76,13 @@ class BookingService:
         kiln_id: Optional[int] = None,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
-        status: Optional[str] = None,
+        status: Optional[List[str]] = None,
     ) -> List[models.Booking]:
         query = db.query(models.Booking)
         if kiln_id:
             query = query.filter(models.Booking.kiln_id == kiln_id)
         if status:
-            query = query.filter(models.Booking.status == status)
+            query = query.filter(models.Booking.status.in_(status))
         if start_date:
             query = query.filter(models.Booking.end_time >= start_date)
         if end_date:

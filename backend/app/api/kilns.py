@@ -2,9 +2,10 @@ from typing import List, Optional
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from app import schemas
+from app import schemas, models
 from app.database import get_db
 from app.services import KilnService
+from app.utils.auth import require_auth
 
 router = APIRouter(prefix="/api/kilns", tags=["窑炉管理"])
 
@@ -26,12 +27,21 @@ def get_kiln(kiln_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=schemas.Kiln, status_code=201)
-def create_kiln(data: schemas.KilnCreate, db: Session = Depends(get_db)):
+def create_kiln(
+    data: schemas.KilnCreate,
+    db: Session = Depends(get_db),
+    _: models.User = Depends(require_auth)
+):
     return KilnService.create(db, data)
 
 
 @router.put("/{kiln_id}", response_model=schemas.Kiln)
-def update_kiln(kiln_id: int, data: schemas.KilnUpdate, db: Session = Depends(get_db)):
+def update_kiln(
+    kiln_id: int,
+    data: schemas.KilnUpdate,
+    db: Session = Depends(get_db),
+    _: models.User = Depends(require_auth)
+):
     kiln = KilnService.update(db, kiln_id, data)
     if not kiln:
         raise HTTPException(status_code=404, detail="窑炉不存在")
@@ -39,7 +49,11 @@ def update_kiln(kiln_id: int, data: schemas.KilnUpdate, db: Session = Depends(ge
 
 
 @router.delete("/{kiln_id}")
-def delete_kiln(kiln_id: int, db: Session = Depends(get_db)):
+def delete_kiln(
+    kiln_id: int,
+    db: Session = Depends(get_db),
+    _: models.User = Depends(require_auth)
+):
     if not KilnService.delete(db, kiln_id):
         raise HTTPException(status_code=404, detail="窑炉不存在")
     return {"message": "删除成功"}

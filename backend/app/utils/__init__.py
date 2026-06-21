@@ -12,14 +12,15 @@ def generate_qr_code(artwork_id: int) -> str:
     return unique_code
 
 
-def generate_qr_image(qr_code: str, save_path: Optional[str] = None) -> bytes:
+def generate_qr_image(qr_code: str, save_path: Optional[str] = None, as_url: bool = True) -> bytes:
     qr = qrcode.QRCode(
-        version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        version=2,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
         box_size=10,
         border=4,
     )
-    qr.add_data(qr_code)
+    qr_data = f"{settings.FRONTEND_BASE_URL}/artworks/{qr_code}" if as_url else qr_code
+    qr.add_data(qr_data)
     qr.make(fit=True)
     img = qr.make_image(fill_color="#5d4e37", back_color="#faf6f0")
 

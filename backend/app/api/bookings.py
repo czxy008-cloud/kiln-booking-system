@@ -2,9 +2,10 @@ from typing import List, Optional
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from app import schemas
+from app import schemas, models
 from app.database import get_db
 from app.services import BookingService
+from app.utils.auth import require_auth
 
 router = APIRouter(prefix="/api/bookings", tags=["预约管理"])
 
@@ -14,7 +15,7 @@ def list_bookings(
     kiln_id: Optional[int] = Query(None),
     start_date: Optional[datetime] = Query(None),
     end_date: Optional[datetime] = Query(None),
-    status: Optional[str] = Query(None),
+    status: Optional[List[str]] = Query(None),
     db: Session = Depends(get_db)
 ):
     return BookingService.get_all(db, kiln_id=kiln_id, start_date=start_date, end_date=end_date, status=status)
@@ -59,7 +60,11 @@ def get_booking(booking_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=schemas.Booking, status_code=201)
-def create_booking(data: schemas.BookingCreate, db: Session = Depends(get_db)):
+def create_booking(
+    data: schemas.BookingCreate,
+    db: Session = Depends(get_db),
+    _: models.User = Depends(require_auth)
+):
     has_conflict, conflicts = BookingService.check_conflict(db, data.kiln_id, data.start_time, data.end_time)
     if has_conflict:
         conflict_info = [f"{b.title} ({b.start_time} ~ {b.end_time})" for b in conflicts]
@@ -71,7 +76,12 @@ def create_booking(data: schemas.BookingCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/{booking_id}", response_model=schemas.Booking)
-def update_booking(booking_id: int, data: schemas.BookingUpdate, db: Session = Depends(get_db)):
+def update_booking(
+    booking_id: int,
+    data: schemas.BookingUpdate,
+    db: Session = Depends(get_db),
+    _: models.User = Depends(require_auth)
+):
     booking = BookingService.get_by_id(db, booking_id)
     if not booking:
         raise HTTPException(status_code=404, detail="预约不存在")
@@ -93,7 +103,11 @@ def update_booking(booking_id: int, data: schemas.BookingUpdate, db: Session = D
 
 
 @router.delete("/{booking_id}")
-def delete_booking(booking_id: int, db: Session = Depends(get_db)):
+def delete_booking(
+    booking_id: int,
+    db: Session = Depends(get_db),
+    _: models.User = Depends(require_auth)
+):
     if not BookingService.delete(db, booking_id):
         raise HTTPException(status_code=404, detail="预约不存在")
     return {"message": "删除成功"}

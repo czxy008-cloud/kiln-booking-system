@@ -1,8 +1,12 @@
 import os
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from fastapi.responses import FileResponse
+from sqlalchemy.orm import Session
+from app import models
 from app.config import settings
 from app.utils import save_upload_file
+from app.database import get_db
+from app.utils.auth import require_auth
 
 router = APIRouter(prefix="/api/uploads", tags=["文件上传"])
 
@@ -10,7 +14,11 @@ ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 
 
 @router.post("/artwork-photo")
-async def upload_artwork_photo(file: UploadFile = File(...)):
+async def upload_artwork_photo(
+    file: UploadFile = File(...),
+    _: models.User = Depends(require_auth),
+    db: Session = Depends(get_db)
+):
     if not file.filename:
         raise HTTPException(status_code=400, detail="文件名不能为空")
 

@@ -18,6 +18,19 @@
             </option>
           </select>
         </div>
+        <div class="form-group">
+          <label>泥料类型 *</label>
+          <select v-model="clayType" @change="onClayTypeChange">
+            <option value="">请选择泥料类型</option>
+            <option v-for="t in clayTypes" :key="t" :value="t">{{ t }}</option>
+          </select>
+          <div v-if="recommendedCurve" class="recommend-tip">
+            ✓ 已自动推荐曲线：{{ recommendedCurve.name }}
+          </div>
+          <div v-if="recommendLoading" class="recommend-tip loading">
+            正在匹配推荐曲线...
+          </div>
+        </div>
         <div class="form-row">
           <div class="form-group">
             <label>预约人 *</label>
@@ -92,6 +105,11 @@ const emit = defineEmits(['close', 'saved', 'conflict'])
 
 const submitting = ref(false)
 const errorMessage = ref('')
+const recommendLoading = ref(false)
+const recommendedCurve = ref(null)
+const clayType = ref('')
+
+const clayTypes = ['高白泥', '紫砂', '瓷泥', '陶泥', '粗陶', '炻器', '其他']
 
 const defaultForm = () => ({
   title: '',
@@ -121,10 +139,44 @@ watch(() => props.booking, (val) => {
       status: val.status || 'pending',
       notes: val.notes || ''
     }
+    if (val.firing_curve_id && props.curves.length > 0) {
+      const curve = props.curves.find(c => c.id === val.firing_curve_id)
+      if (curve) {
+        clayType.value = curve.clay_type
+        recommendedCurve.value = curve
+      }
+    }
   } else {
     form.value = defaultForm()
+    clayType.value = ''
+    recommendedCurve.value = null
   }
 }, { immediate: true })
+
+async function onClayTypeChange() {
+  recommendedCurve.value = null
+  form.value.firing_curve_id = null
+  if (!clayType.value) return
+
+  recommendLoading.value = true
+  try {
+    const res = await api.get(`/firing-curves/recommend/${encodeURIComponent(clayType.value)}`)
+    if (res.data) {
+      recommendedCurve.value = res.data
+      form.value.firing_curve_id = res.data.id
+    } else {
+      const allRes = await api.get('/firing-curves', { params: { clay_type: clayType.value } })
+      if (allRes.data && allRes.data.length > 0) {
+        recommendedCurve.value = allRes.data[0]
+        form.value.firing_curve_id = allRes.data[0].id
+      }
+    }
+  } catch (e) {
+    console.error('获取推荐曲线失败:', e)
+  } finally {
+    recommendLoading.value = false
+  }
+}
 
 function validate() {
   if (!form.value.title.trim()) {
@@ -133,6 +185,10 @@ function validate() {
   }
   if (!form.value.kiln_id) {
     errorMessage.value = '请选择窑炉'
+    return false
+  }
+  if (!clayType.value) {
+    errorMessage.value = '请选择泥料类型'
     return false
   }
   if (!form.value.booker_name.trim()) {
@@ -205,6 +261,18 @@ async function handleDelete() {
   border-radius: $radius-md;
   font-size: $font-size-sm;
   margin-top: $spacing-md;
+}
+.recommend-tip {
+  margin-top: $spacing-xs;
+  padding: $spacing-xs $spacing-sm;
+  background: rgba($color-success, 0.1);
+  color: $color-success;
+  font-size: $font-size-xs;
+  border-radius: $radius-sm;
+  &.loading {
+    background: rgba($color-primary, 0.1);
+    color: $color-primary;
+  }
 }
 @media (max-width: 600px) {
   .form-row {

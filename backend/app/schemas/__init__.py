@@ -1,6 +1,42 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
+
+
+class UserBase(BaseModel):
+    username: str = Field(..., max_length=50)
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    role: Optional[str] = "user"
+
+
+class UserCreate(UserBase):
+    password: str = Field(..., min_length=4)
+
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: "User"
+
+
+class User(UserBase):
+    id: int
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class TokenData(BaseModel):
+    username: Optional[str] = None
 
 
 class KilnBase(BaseModel):
@@ -186,4 +222,5 @@ class Artwork(ArtworkBase):
         from_attributes = True
 
 
+Token.model_rebuild()
 BookingWithArtworks.model_rebuild()

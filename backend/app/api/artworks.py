@@ -5,6 +5,7 @@ from app import schemas, models
 from app.database import get_db
 from app.services import ArtworkService
 from app.utils import generate_qr_image
+from app.utils.auth import require_auth
 
 router = APIRouter(prefix="/api/artworks", tags=["作品管理"])
 
@@ -45,12 +46,21 @@ def get_artwork_qrcode(artwork_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=schemas.Artwork, status_code=201)
-def create_artwork(data: schemas.ArtworkCreate, db: Session = Depends(get_db)):
+def create_artwork(
+    data: schemas.ArtworkCreate,
+    db: Session = Depends(get_db),
+    _: models.User = Depends(require_auth)
+):
     return ArtworkService.create(db, data)
 
 
 @router.put("/{artwork_id}", response_model=schemas.Artwork)
-def update_artwork(artwork_id: int, data: schemas.ArtworkUpdate, db: Session = Depends(get_db)):
+def update_artwork(
+    artwork_id: int,
+    data: schemas.ArtworkUpdate,
+    db: Session = Depends(get_db),
+    _: models.User = Depends(require_auth)
+):
     artwork = ArtworkService.update(db, artwork_id, data)
     if not artwork:
         raise HTTPException(status_code=404, detail="作品不存在")
@@ -58,7 +68,11 @@ def update_artwork(artwork_id: int, data: schemas.ArtworkUpdate, db: Session = D
 
 
 @router.delete("/{artwork_id}")
-def delete_artwork(artwork_id: int, db: Session = Depends(get_db)):
+def delete_artwork(
+    artwork_id: int,
+    db: Session = Depends(get_db),
+    _: models.User = Depends(require_auth)
+):
     if not ArtworkService.delete(db, artwork_id):
         raise HTTPException(status_code=404, detail="作品不存在")
     return {"message": "删除成功"}
@@ -69,7 +83,8 @@ def update_artwork_stage(
     artwork_id: int,
     stage_key: str,
     data: schemas.ArtworkStageUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: models.User = Depends(require_auth)
 ):
     stage = ArtworkService.update_stage(db, artwork_id, stage_key, data)
     if not stage:

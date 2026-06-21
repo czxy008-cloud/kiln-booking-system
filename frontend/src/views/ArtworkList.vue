@@ -242,9 +242,14 @@ async function fetchArtworks() {
 
 async function fetchBookings() {
   try {
-    const res = await api.get('/bookings', { params: { status: 'pending,confirmed,in_progress' } })
+    const res = await api.get('/bookings', {
+      params: { status: ['pending', 'confirmed', 'in_progress'] },
+      paramsSerializer: { indexes: null }
+    })
     bookings.value = res.data
-  } catch (e) {}
+  } catch (e) {
+    console.error('获取预约列表失败:', e)
+  }
 }
 
 function openCreate() {

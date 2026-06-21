@@ -183,13 +183,15 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import dayjs from 'dayjs'
 import api from '@/api'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
+const authStore = useAuthStore()
 const loading = ref(true)
 const saving = ref(false)
 const uploadingPhoto = ref(false)
 const artwork = ref(null)
-const isManager = ref(true)
+const isManager = computed(() => authStore.isLoggedIn)
 const showStageModal = ref(false)
 const editingStage = ref(null)
 const previewImage = ref(null)
