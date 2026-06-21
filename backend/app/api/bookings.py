@@ -16,7 +16,8 @@ def list_bookings(
     start_date: Optional[datetime] = Query(None),
     end_date: Optional[datetime] = Query(None),
     status: Optional[List[str]] = Query(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: models.User = Depends(require_auth)
 ):
     return BookingService.get_all(db, kiln_id=kiln_id, start_date=start_date, end_date=end_date, status=status)
 
@@ -24,7 +25,8 @@ def list_bookings(
 @router.get("/week", response_model=dict)
 def get_week_calendar(
     date: Optional[datetime] = Query(None, description="基准日期，默认今天"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: models.User = Depends(require_auth)
 ):
     data = BookingService.get_week_bookings(db, date)
     result = {}
@@ -42,7 +44,8 @@ def check_conflict(
     start_time: datetime,
     end_time: datetime,
     exclude_booking_id: Optional[int] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: models.User = Depends(require_auth)
 ):
     has_conflict, conflicts = BookingService.check_conflict(db, kiln_id, start_time, end_time, exclude_booking_id)
     return {
@@ -52,7 +55,11 @@ def check_conflict(
 
 
 @router.get("/{booking_id}", response_model=schemas.BookingWithArtworks)
-def get_booking(booking_id: int, db: Session = Depends(get_db)):
+def get_booking(
+    booking_id: int,
+    db: Session = Depends(get_db),
+    _: models.User = Depends(require_auth)
+):
     booking = BookingService.get_by_id(db, booking_id)
     if not booking:
         raise HTTPException(status_code=404, detail="预约不存在")

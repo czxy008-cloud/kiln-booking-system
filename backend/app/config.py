@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "uploads"
     CORS_ORIGINS: list = ["http://localhost:5173", "http://localhost:3000"]
     FRONTEND_BASE_URL: str = "http://localhost:5173"
+    QR_CODE_BASE_URL: str = ""
 
     class Config:
         env_file = ".env"

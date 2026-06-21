@@ -12,13 +12,18 @@ router = APIRouter(prefix="/api/firing-curves", tags=["烧制曲线"])
 @router.get("", response_model=List[schemas.FiringCurve])
 def list_curves(
     clay_type: Optional[str] = Query(None, description="按泥料类型筛选"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: models.User = Depends(require_auth)
 ):
     return FiringCurveService.get_all(db, clay_type=clay_type)
 
 
 @router.get("/{curve_id}", response_model=schemas.FiringCurve)
-def get_curve(curve_id: int, db: Session = Depends(get_db)):
+def get_curve(
+    curve_id: int,
+    db: Session = Depends(get_db),
+    _: models.User = Depends(require_auth)
+):
     curve = FiringCurveService.get_by_id(db, curve_id)
     if not curve:
         raise HTTPException(status_code=404, detail="曲线不存在")
@@ -26,7 +31,11 @@ def get_curve(curve_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/recommend/{clay_type}", response_model=Optional[schemas.FiringCurve])
-def recommend_curve(clay_type: str, db: Session = Depends(get_db)):
+def recommend_curve(
+    clay_type: str,
+    db: Session = Depends(get_db),
+    _: models.User = Depends(require_auth)
+):
     curve = FiringCurveService.get_default_for_clay(db, clay_type)
     if not curve:
         curves = FiringCurveService.get_all(db, clay_type=clay_type)
